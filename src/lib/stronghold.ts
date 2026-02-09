@@ -16,42 +16,44 @@ const init = async ()=> {
         await setPassword(service, user, password);
     }
 
-    let stronghold: Stronghold, client: Client;
-    const getRecord = async (key: string): Promise<string> => {
-        if (!client) {
-            return "";
-        }
-
-        try {
-            const store = client.getStore()
-            const data = await store.get(key);
-
-            if (!data || data.length === 0) {
-                console.warn(`No data found for key: ${key}`);
-                return "";
-            }
-
-            return new TextDecoder().decode(new Uint8Array(data));
-        } catch (error) {
-            console.error("Error retrieving record:", error);
-            return "";
-        }
-    }
-    const insertRecord = async (key: string, value: string) => {
-        const store = client.getStore()
-        const data = Array.from(new TextEncoder().encode(value));
-        await store.insert(key, data);
-        await stronghold.save();
-    }
-
     try {
-        stronghold = await Stronghold.load(vaultPath, password);
+        let client: Client;
+        const stronghold = await Stronghold.load(vaultPath, password);
         try {
             client = await stronghold.loadClient(CLIENT_NAME);
         } catch {
             client = await stronghold.createClient(CLIENT_NAME);
         }
         console.log("Stronghold loaded successfully");
+
+        const getRecord = async (key: string): Promise<string> => {
+            try {
+                const store = client.getStore();
+                const data = await store.get(key);
+
+                if (!data) {
+                    console.warn(`No data found for key: ${key}`);
+                    return "";
+                }
+
+                return new TextDecoder().decode(new Uint8Array(data));
+            } catch (error) {
+                console.error(`Error retrieving record for key '${key}':`, error);
+                return "";
+            }
+        }
+        const insertRecord = async (key: string, value: string) => {
+            try {
+                const store = client.getStore()
+                const data = Array.from(new TextEncoder().encode(value));
+
+                await store.insert(key, data);
+                await stronghold.save();
+            } catch (error) {
+                console.error(`Error saving record for key '${key}':`, error);
+            }
+        }
+
         return {
             getRecord: getRecord,
             insertRecord: insertRecord

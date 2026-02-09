@@ -8,8 +8,9 @@ type StreamCompanionCallback = (message: string) => void;
 
 const io = new Server({
     cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: ["http://localhost:1421", "http://tauri.localhost"],
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
@@ -43,6 +44,23 @@ wss.on("connection", (client) => {
         console.log("Websocket: Disconnected");
     })
 })
+
+io.use(async (socket, next) => {
+    if (!process.env.AUTH_TOKEN) {
+        next();
+        return;
+    }
+
+    const token = socket.handshake.auth.token;
+
+    if (!token || token !== process.env.AUTH_TOKEN) {
+        console.log("Socket.io: Unauthorized")
+        return next(new Error("401 Not Authorized"));
+    }
+    console.log("Socket.io: Authenticated")
+
+    next();
+});
 
 io.on("connection", (socket) => {
     console.log("Socket.io: Connected");

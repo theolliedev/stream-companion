@@ -29,8 +29,16 @@ const init = (client: Socket, apiKey: string, context: string, callback: (res: b
     })
 }
 
-const restart = (client: Socket, apiKey: string, context: string, callback: (res: boolean) => void) => {
+const restart = (client: Socket, context: string, callback: (res: boolean) => void) => {
     toast.promise(new Promise(async (resolve, reject) => {
+        const apiKey = await fetchAPIKey();
+
+        if (!apiKey) {
+            reject("");
+            callback(false);
+            return;
+        }
+
         client.emit("ai:restart", {
             apiKey: apiKey,
             message: JSON.stringify({
