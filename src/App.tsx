@@ -3,16 +3,23 @@ import {ConfigForm} from "@/components/ConfigForm.tsx";
 import {MessageForm} from "@/components/MessageForm.tsx";
 import {useEffect, useState} from "react";
 import * as backend from "@/lib/backend.ts"
-import {Config} from "@/lib/config.ts";
 import {ScrollArea} from "@/components/ui/scroll-area.tsx";
+import {toast} from "sonner";
 
 function App() {
-  const [userConfig, setUserConfig] = useState<Config>({ context: "" })
-  const [configLoadingState, setConfigLoadingState] = useState(true);
-  const [aiState, setAiState] = useState(false)
+  const [backendReady, setBackendReady] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
 
   useEffect(() => {
-    backend.init();
+    const backendInit = async () => {
+      const client = await backend.init();
+      if (!client) {
+        toast.error("Failed to initialize backend connection.");
+        return;
+      }
+      setBackendReady(true);
+    }
+    backendInit();
   }, []);
 
   return (
@@ -22,18 +29,11 @@ function App() {
               <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight text-balance">
                 Configuration
               </h1>
-              <ConfigForm
-                  userConfig={userConfig}
-                  setUserConfig={setUserConfig}
-                  loadingState={configLoadingState}
-                  setConfigLoadingState={setConfigLoadingState}
-                  aiState={aiState}
-                  setAiState={setAiState}
-              />
+              <ConfigForm backendReady={backendReady} aiReady={aiReady} setAiReady={setAiReady} />
             </div>
           </ScrollArea>
         <div className="flex flex-col w-full px-8 py-12 bg-gray-200">
-          <MessageForm isAiReady={aiState} />
+          <MessageForm isAiReady={aiReady} />
         </div>
     </main>
   );

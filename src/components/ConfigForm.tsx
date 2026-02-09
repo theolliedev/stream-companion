@@ -17,14 +17,17 @@ import * as config from "@/lib/config.ts";
 import * as ai from "@/lib/ai.ts";
 import {client} from "@/lib/backend.ts";
 import {updateAPIKey} from "@/lib/ai.ts";
-import {useEffect, useRef} from "react";
+import {Dispatch, SetStateAction, useEffect, useRef, useState} from "react";
+import {Config} from "@/lib/config.ts";
 
 // const aiModels = [
 //     "gpt-4o"
 // ]
 
-const ConfigForm = ({ userConfig, setUserConfig, setConfigLoadingState, loadingState, setAiState, aiState }: { userConfig: any, setUserConfig: any, setConfigLoadingState: any, loadingState: any, setAiState: any, aiState: any }) => {
+const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean, aiReady: boolean, setAiReady: Dispatch<SetStateAction<boolean>> }) => {
     const apiKeyInputRef = useRef<HTMLInputElement>(null);
+    const [userConfig, setUserConfig] = useState<Config>({ context: "" })
+    const [loadingState, setLoadingState] = useState(true);
 
     const updateConfig = (data: any) => {
         const newConfig = {...userConfig, ...data};
@@ -33,7 +36,7 @@ const ConfigForm = ({ userConfig, setUserConfig, setConfigLoadingState, loadingS
 
     const configFormHandler = async (event: any) => {
         event.preventDefault();
-        setConfigLoadingState(true);
+        setLoadingState(true);
 
         const key = apiKeyInputRef.current?.value ?? "";
 
@@ -42,13 +45,13 @@ const ConfigForm = ({ userConfig, setUserConfig, setConfigLoadingState, loadingS
             await updateAPIKey(key);
 
             if (key) {
-                setAiState(false);
+                setAiReady(false);
                 ai.restart(client, userConfig.context, async (res) => {
-                    setAiState(res);
+                    setAiReady(res);
                 })
             }
 
-            setConfigLoadingState(false);
+            setLoadingState(false);
             resolve("");
         }), {
             loading: "Saving...",
@@ -59,35 +62,34 @@ const ConfigForm = ({ userConfig, setUserConfig, setConfigLoadingState, loadingS
 
     const restartHandling = async (event: any) => {
         event.preventDefault();
-        setConfigLoadingState(true);
+        setLoadingState(true);
 
         const currentConfig = await config.fetch();
-        setAiState(false);
+        setAiReady(false);
 
         ai.restart(client, currentConfig.context, async (res) => {
-            setAiState(res);
+            setAiReady(res);
         })
 
-        setConfigLoadingState(false);
+        setLoadingState(false);
     }
 
     useEffect(() => {
-        const aiInitialization = async () => {
+        console.log(backendReady)
+        if (backendReady) {
             toast.promise(new Promise(async (resolve) => {
                 const fetchedConfig = await config.fetch();
                 const apiKey = await ai.fetchAPIKey();
 
-                setUserConfig(fetchedConfig);
-
                 if (apiKey && apiKeyInputRef.current) {
                     apiKeyInputRef.current.value = apiKey;
-                    ai.init(client, apiKey, userConfig.context, (res) => {
-                        setAiState(res);
+                    ai.init(client, apiKey, fetchedConfig.context, (res) => {
+                        setAiReady(res);
                     });
                 }
 
-                setConfigLoadingState(false);
-
+                setUserConfig(fetchedConfig);
+                setLoadingState(false);
                 resolve("")
             }), {
                 loading: "Loading configuration...",
@@ -95,14 +97,13 @@ const ConfigForm = ({ userConfig, setUserConfig, setConfigLoadingState, loadingS
                 error: "Error",
             })
         }
-        aiInitialization();
-    }, [apiKeyInputRef]);
+    }, [apiKeyInputRef, backendReady]);
 
     return (
         <form>
             <FieldGroup>
                 <div className="flex gap-3 items-center">
-                    <Status state={aiState} />
+                    <Status state={aiReady} />
                     <h2 className="scroll-m-20 text-3xl font-semibold tracking-none first:mt-0">
                         AI Companion
                     </h2>
@@ -142,7 +143,7 @@ const ConfigForm = ({ userConfig, setUserConfig, setConfigLoadingState, loadingS
                     <Button onClick={configFormHandler} disabled={loadingState}>
                         Save
                     </Button>
-                    <Button onClick={restartHandling} disabled={loadingState || !aiState}>
+                    <Button onClick={restartHandling} disabled={loadingState || !aiReady}>
                         Restart
                     </Button>
                 </Field>
