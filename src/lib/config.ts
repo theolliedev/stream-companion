@@ -15,7 +15,7 @@ const save = async (config: Config) => {
         })
     }
 
-    await writeTextFile('config.json', JSON.stringify(config), {
+    await writeTextFile('config.json', JSON.stringify(config, null, 2), {
         baseDir: BaseDirectory.AppData
     });
 }
