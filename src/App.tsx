@@ -30,12 +30,15 @@ function App() {
 
       setAiState(false);
       await updateAPIKey(key);
-      ai.init(client, key, userConfig.context, async (res) => {
-        if (res) {
-          setAiState(true);
-          return;
-        }
-      })
+
+      if (key) {
+        ai.restart(client, key, userConfig.context, async (res) => {
+          if (res) {
+            setAiState(true);
+            return;
+          }
+        })
+      }
 
       setConfigLoadingState(false);
       resolve({});
@@ -55,9 +58,11 @@ function App() {
       const key = await ai.fetchAPIKey();
       setApiKey(key ?? "");
 
-      ai.init(client, key ?? "", fetchedConfig.context, (res) => {
-        setAiState(res);
-      });
+      if (key) {
+        ai.init(client, key, fetchedConfig.context, (res) => {
+          setAiState(res);
+        });
+      }
 
       setConfigLoadingState(false);
       resolve({})

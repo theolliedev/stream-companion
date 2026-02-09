@@ -17,8 +17,6 @@ const aiModels = [
     "gpt-4o"
 ]
 
-
-
 const ConfigForm = ({ userConfig, setUserConfig, apiKey, setApiKey, formHandler, isLoading, isOnline }: { userConfig: any, setUserConfig: any, apiKey: string, setApiKey: any, formHandler: any, isLoading: any, isOnline: any }) => {
     const updateConfig = (data: any) => {
         const newConfig = {...userConfig, ...data};
@@ -26,7 +24,7 @@ const ConfigForm = ({ userConfig, setUserConfig, apiKey, setApiKey, formHandler,
     }
 
     return (
-        <form onSubmit={(event) => formHandler(event, apiKey, setApiKey)}>
+        <form onSubmit={(event) => formHandler(event, apiKey)}>
             <FieldGroup>
                 <div className="flex gap-3 items-center">
                     <Status state={isOnline} />

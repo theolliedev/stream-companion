@@ -3,7 +3,7 @@ import {MemorySaver} from "@langchain/langgraph";
 import {createAgent} from "langchain";
 import type {ReactAgent} from "langchain";
 
-let agent: ReactAgent | null = null;
+let agent: ReactAgent | null;
 
 const instructions = `
 You are a friendly text only Twitch Stream AI Companion. Only respond in text messages.
@@ -25,6 +25,18 @@ You are a friendly text only Twitch Stream AI Companion. Only respond in text me
 `;
 
 const aiInit = async (data: any) => {
+    if (agent) {
+        return {
+            success: true,
+            messages: []
+        }
+    }
+
+    console.log("Socket.io: Initiating AI")
+    return await aiStart(data);
+}
+
+const aiStart = async (data: any) => {
     const checkpointer = new MemorySaver();
 
     const model = new ChatOpenAI({
@@ -98,4 +110,4 @@ const aiMessage = async (data: any) => {
     }
 }
 
-export { aiInit, aiMessage }
+export { aiInit, aiStart, aiMessage }

@@ -1,8 +1,11 @@
-import {aiInit, aiMessage} from "./src/ai.js";
+import {aiInit, aiMessage, aiStart} from "./src/ai.js";
 import {Server} from "socket.io";
 import {WebSocketServer} from "ws";
 
-process.title = "AI Companion: Backend";
+let userConfig: any;
+let sendMessage: StreamCompanionCallback | null;
+type StreamCompanionCallback = (message: string) => void;
+
 const io = new Server({
     cors: {
         origin: "*",
@@ -10,12 +13,10 @@ const io = new Server({
     }
 });
 
-type StreamCompanionCallback = (message: string) => void;
-
 const wss = new WebSocketServer({
     port: 6562
 })
-let sendMessage: StreamCompanionCallback = (message) => {};
+
 
 wss.on("connection", (client) => {
     console.log("Websocket: Connected");
@@ -31,10 +32,11 @@ wss.on("connection", (client) => {
     client.on("message", async (message: string) => {
         console.log("Websocket: Prompting");
         const res = await aiMessage(message);
-        if (typeof res.message !== "string") return;
-        console.log(`Websocket: ${res.message}`);
-        console.log("Websocket: Sending Message")
-        sendMessage(res.message);
+        if (sendMessage && res.success && typeof res.message == "string") {
+            console.log(`Websocket: ${res.message}`);
+            console.log("Websocket: Sending Message")
+            sendMessage(res.message);
+        }
     })
 
     client.on("close", () => {
@@ -46,19 +48,28 @@ io.on("connection", (socket) => {
     console.log("Socket.io: Connected");
 
     socket.on("ai:init", async (data, callback) => {
-        console.log("Socket.io: Initiating AI")
+        userConfig = data;
         callback(await aiInit(data));
+    })
+
+    socket.on("ai:restart", async (data, callback) => {
+        console.log("Socket.io: Restarting AI")
+        if (data) {
+            userConfig = data;
+            callback(await aiStart(data));
+        } else {
+            callback(await aiStart(userConfig));
+        }
     })
 
     socket.on("ai:message", async (data, callback) => {
         console.log("Socket.io: Prompting");
         const res = await aiMessage(data);
         console.log(`Socket.io: ${res.message}`);
-        if (res.success && typeof res.message == "string") {
-            if (sendMessage) {
-                console.log("Socket.io: Sending Message");
-                sendMessage(res.message);
-            }
+        if (sendMessage && res.success && typeof res.message == "string") {
+            console.log(`Socket.io: ${res.message}`);
+            console.log("Socket.io: Sending Message");
+            sendMessage(res.message);
         }
         console.log("Socket.io: Callback");
         callback(res);
