@@ -3,7 +3,7 @@ import {MemorySaver} from "@langchain/langgraph";
 import {createAgent} from "langchain";
 import type {ReactAgent} from "langchain";
 
-let agent: ReactAgent | null;
+let agent: ReactAgent | null = null;
 
 const instructions = `
 You are a friendly text only Twitch Stream AI Companion. Only respond in text messages.
@@ -36,13 +36,13 @@ const aiInit = async (data: any) => {
     return await aiStart(data);
 }
 
-const aiStart = async (data: any) => {
+const aiStart = async (config: any) => {
     const checkpointer = new MemorySaver();
 
     const model = new ChatOpenAI({
         model: "gpt-4o",
         temperature: 0,
-        apiKey: data.apiKey,
+        apiKey: config.apiKey,
     })
     agent = createAgent({
         model: model,
@@ -58,7 +58,7 @@ const aiStart = async (data: any) => {
                 },
                 {
                     role: "user",
-                    content: data.message
+                    content: config.message
                 }
             ]},
             { configurable: { thread_id: "1" } }
@@ -85,19 +85,25 @@ const aiStart = async (data: any) => {
     }
 }
 
-const aiMessage = async (data: any) => {
+const aiMessage = async (message: string) => {
     if (!agent) {
         return {
             success: false,
-            message: "error"
+            message: "AI Companion not initiated"
         };
     }
 
     try {
         const response = await agent.invoke(
-            { messages: [JSON.stringify(data)] },
+            { messages: [
+                {
+                    role: "user",
+                    content: message
+                }
+            ]},
             { configurable: { thread_id: "1" } }
         )
+
         return {
             success: true,
             message: response.messages[response.messages.length-1].content

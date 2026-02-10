@@ -12,12 +12,17 @@ function App() {
 
   useEffect(() => {
     const backendInit = async () => {
-      const client = await backend.init();
-      if (!client) {
+      try {
+        const client = await backend.init();
+        if (!client) {
+          toast.error("Failed to initialize backend connection.");
+          return;
+        }
+        setBackendReady(true);
+      } catch (error) {
+        console.error("Error initializing backend:", error);
         toast.error("Failed to initialize backend connection.");
-        return;
       }
-      setBackendReady(true);
     }
     backendInit();
   }, []);

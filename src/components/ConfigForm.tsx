@@ -13,12 +13,12 @@ import {Input} from "@/components/ui/input.tsx";
 // } from "@/components/ui/combobox"
 import {Status} from "@/components/Status.tsx";
 import {toast} from "sonner";
-import * as config from "@/lib/config.ts";
-import * as ai from "@/lib/ai.ts";
 import {client} from "@/lib/backend.ts";
 import {updateAPIKey} from "@/lib/ai.ts";
 import {Dispatch, SetStateAction, useEffect, useRef, useState} from "react";
 import {Config} from "@/lib/config.ts";
+import * as config from "@/lib/config.ts";
+import * as ai from "@/lib/ai.ts";
 
 // const aiModels = [
 //     "gpt-4o"
@@ -40,28 +40,31 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
 
         const key = apiKeyInputRef.current?.value ?? "";
 
-        toast.promise(() => new Promise(async (resolve) => {
+        toast.promise(() => new Promise(async (resolve, reject) => {
             await config.save(userConfig)
             await updateAPIKey(key);
 
             if (key) {
                 setAiReady(false);
                 ai.restart(client, userConfig.context, async (res) => {
-                    setAiReady(res);
+                    if (res) {
+                        resolve("");
+                        setAiReady(true);
+                        return;
+                    }
+                    reject("");
                 })
             }
 
             setLoadingState(false);
-            resolve("");
         }), {
             loading: "Saving...",
             success: () => `Settings have been saved!`,
-            error: "Error",
+            error: "Failed to save settings",
         })
     }
 
-    const restartHandling = async (event: any) => {
-        event.preventDefault();
+    const restartHandling = async () => {
         setLoadingState(true);
 
         const currentConfig = await config.fetch();
@@ -75,7 +78,6 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
     }
 
     useEffect(() => {
-        console.log(backendReady)
         if (backendReady) {
             toast.promise(new Promise(async (resolve) => {
                 const fetchedConfig = await config.fetch();
@@ -100,7 +102,7 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
     }, [apiKeyInputRef, backendReady]);
 
     return (
-        <form>
+        <form onSubmit={configFormHandler}>
             <FieldGroup>
                 <div className="flex gap-3 items-center">
                     <Status state={aiReady} />
@@ -134,16 +136,16 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
                 </FieldGroup>
                 <Field>
                     <Label htmlFor="aicontext">AI Context</Label>
-                    <FieldDescription>Describe how you want your companion will behave!</FieldDescription>
+                    <FieldDescription>Describe how you want your companion to behave!</FieldDescription>
                     <Textarea id="aicontext" className="max-h-40" placeholder="You are a..."
                               disabled={loadingState} onChange={(e) => updateConfig({context: e.target.value})}
                               value={userConfig.context ?? ""}/>
                 </Field>
                 <Field orientation="horizontal">
-                    <Button onClick={configFormHandler} disabled={loadingState}>
+                    <Button type="submit" disabled={loadingState}>
                         Save
                     </Button>
-                    <Button onClick={restartHandling} disabled={loadingState || !aiReady}>
+                    <Button onClick={restartHandling} type="button" disabled={loadingState || !aiReady}>
                         Restart
                     </Button>
                 </Field>
