@@ -9,6 +9,15 @@ const defaultConfig: Config = {
 }
 
 const save = async (config: Config) => {
+    const folderExists = await exists('', {
+        baseDir: BaseDirectory.AppData
+    })
+    if (!folderExists) {
+        await mkdir('', {
+            baseDir: BaseDirectory.AppData
+        })
+    }
+
     await writeTextFile('config.json', JSON.stringify(config, null, 2), {
         baseDir: BaseDirectory.AppData
     });
@@ -39,10 +48,12 @@ const fetch: () => Promise<Config> = async () => {
         baseDir: BaseDirectory.AppData
     })
 
-    if (config) {
+    try {
         return JSON.parse(config);
+    } catch {
+        console.log("Failed to parse config, returning default config.");
+        return defaultConfig;
     }
-    return { error: true }
 }
 
 export { save, fetch };
