@@ -25,12 +25,24 @@ You are a friendly text only Twitch Stream AI Companion. Only respond in text me
 `;
 
 const aiInit = async (data: any) => {
+    if (agent) {
+        return {
+            success: true,
+            messages: []
+        }
+    }
+
+    console.log("Socket.io: Initiating AI")
+    return await aiStart(data);
+}
+
+const aiStart = async (config: any) => {
     const checkpointer = new MemorySaver();
 
     const model = new ChatOpenAI({
         model: "gpt-4o",
         temperature: 0,
-        apiKey: data.apiKey,
+        apiKey: config.apiKey,
     })
     agent = createAgent({
         model: model,
@@ -46,7 +58,7 @@ const aiInit = async (data: any) => {
                 },
                 {
                     role: "user",
-                    content: data.message
+                    content: config.message
                 }
             ]},
             { configurable: { thread_id: "1" } }
@@ -73,19 +85,25 @@ const aiInit = async (data: any) => {
     }
 }
 
-const aiMessage = async (data: any) => {
+const aiMessage = async (message: string) => {
     if (!agent) {
         return {
             success: false,
-            message: "error"
+            message: "AI Companion not initiated"
         };
     }
 
     try {
         const response = await agent.invoke(
-            { messages: [JSON.stringify(data)] },
+            { messages: [
+                {
+                    role: "user",
+                    content: message
+                }
+            ]},
             { configurable: { thread_id: "1" } }
         )
+
         return {
             success: true,
             message: response.messages[response.messages.length-1].content
@@ -98,4 +116,4 @@ const aiMessage = async (data: any) => {
     }
 }
 
-export { aiInit, aiMessage }
+export { aiInit, aiStart, aiMessage }

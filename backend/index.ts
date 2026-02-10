@@ -1,40 +1,37 @@
-import {aiInit, aiMessage} from "./src/ai.js";
+import {aiInit, aiMessage, aiStart} from "./src/ai.js";
 import {Server} from "socket.io";
 import {WebSocketServer} from "ws";
 
-process.title = "AI Companion: Backend";
-const io = new Server({
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
-});
+type AiConfig = {
+    apiKey: string;
+    message: string;
+}
 
-type StreamCompanionCallback = (message: string) => void;
+let aiConfig: AiConfig;
+let sendMessage = (message: string) => {
+    wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+            client.send(message)
+        }
+    })
+}
 
 const wss = new WebSocketServer({
     port: 6562
 })
-let sendMessage: StreamCompanionCallback = (message) => {};
 
 wss.on("connection", (client) => {
     console.log("Websocket: Connected");
 
-    sendMessage = (message: string) => {
-        try {
-            client.send(message);
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
     client.on("message", async (message: string) => {
         console.log("Websocket: Prompting");
         const res = await aiMessage(message);
-        if (typeof res.message !== "string") return;
-        console.log(`Websocket: ${res.message}`);
-        console.log("Websocket: Sending Message")
-        sendMessage(res.message);
+
+        if (res.success && typeof res.message == "string") {
+            console.log(`Websocket: ${res.message}`);
+            console.log("Websocket: Sending Message")
+            sendMessage(res.message);
+        }
     })
 
     client.on("close", () => {
@@ -42,24 +39,60 @@ wss.on("connection", (client) => {
     })
 })
 
+const io = new Server({
+    cors: {
+        origin: ["http://localhost:1421", "http://tauri.localhost"],
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+io.use(async (socket, next) => {
+    if (!process.env.AUTH_TOKEN) {
+        next();
+        return;
+    }
+
+    const token = socket.handshake.auth.token;
+
+    if (!token || token !== process.env.AUTH_TOKEN) {
+        console.log("Socket.io: Unauthorized")
+        return next(new Error("401 Not Authorized"));
+    }
+    console.log("Socket.io: Authenticated")
+
+    next();
+});
+
 io.on("connection", (socket) => {
     console.log("Socket.io: Connected");
 
-    socket.on("ai:init", async (data, callback) => {
-        console.log("Socket.io: Initiating AI")
-        callback(await aiInit(data));
+    socket.on("ai:init", async (config: AiConfig, callback) => {
+        aiConfig = config;
+        callback(await aiInit(config));
     })
 
-    socket.on("ai:message", async (data, callback) => {
+    socket.on("ai:restart", async (config: AiConfig, callback) => {
+        console.log("Socket.io: Restarting AI")
+
+        if (config) {
+            aiConfig = config;
+            callback(await aiStart(config));
+        } else {
+            callback(await aiStart(aiConfig));
+        }
+    })
+
+    socket.on("ai:message", async (message: string, callback) => {
         console.log("Socket.io: Prompting");
-        const res = await aiMessage(data);
+        const res = await aiMessage(message);
+
         console.log(`Socket.io: ${res.message}`);
         if (res.success && typeof res.message == "string") {
-            if (sendMessage) {
-                console.log("Socket.io: Sending Message");
-                sendMessage(res.message);
-            }
+            console.log("Socket.io: Sending Message");
+            sendMessage(res.message);
         }
+
         console.log("Socket.io: Callback");
         callback(res);
     })
