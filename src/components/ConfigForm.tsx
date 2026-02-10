@@ -82,8 +82,11 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
             toast.promise(new Promise(async (resolve, revoke) => {
                 try {
                     const fetchedConfig = await config.fetch();
-                    const apiKey = await ai.fetchAPIKey();
+                    if (fetchedConfig) {
+                        setUserConfig(fetchedConfig);
+                    }
 
+                    const apiKey = await ai.fetchAPIKey();
                     if (apiKey && apiKeyInputRef.current) {
                         apiKeyInputRef.current.value = apiKey;
                         ai.init(client, apiKey, fetchedConfig.context, (res) => {
@@ -96,7 +99,6 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
                         });
                     }
 
-                    setUserConfig(fetchedConfig);
                     resolve("")
                 } catch (e) {
                     console.error(e)
@@ -107,7 +109,7 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
             }), {
                 loading: "Loading configuration...",
                 success: () => `Configuration has been loaded!`,
-                error: "Failed to load configuration, falling back to default config.",
+                error: "Failed to load configuration.",
             })
         }
     }, [apiKeyInputRef, backendReady]);

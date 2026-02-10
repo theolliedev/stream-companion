@@ -51,8 +51,7 @@ const fetch: () => Promise<Config> = async () => {
     try {
         return JSON.parse(config);
     } catch {
-        console.log("Failed to parse config, returning default config.");
-        return defaultConfig;
+        throw new Error("Failed to parse config");
     }
 }
 
