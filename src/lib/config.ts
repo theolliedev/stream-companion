@@ -4,30 +4,41 @@ interface Config {
     context: string
 }
 
+const defaultConfig: Config = {
+    context: ""
+}
+
 const save = async (config: Config) => {
-    const folderExists = await exists('', {
-        baseDir: BaseDirectory.AppData
-    })
-
-    if (!folderExists) {
-        await mkdir('', {
-            baseDir: BaseDirectory.AppData
-        })
-    }
-
     await writeTextFile('config.json', JSON.stringify(config, null, 2), {
         baseDir: BaseDirectory.AppData
     });
 }
 
 const fetch: () => Promise<Config> = async () => {
-    const configFile = await exists('config.json', { baseDir: BaseDirectory.AppConfig })
-    if (!configFile) {
-        return { error: true }
+    const folderExists = await exists('', {
+        baseDir: BaseDirectory.AppData
+    })
+    if (!folderExists) {
+        await mkdir('', {
+            baseDir: BaseDirectory.AppData
+        })
     }
+
+    const fileExists = await exists('config.json', {
+        baseDir: BaseDirectory.AppData
+    })
+    if (!fileExists) {
+        await writeTextFile('config.json', JSON.stringify(defaultConfig, null, 2), {
+            baseDir: BaseDirectory.AppData
+        });
+
+        return defaultConfig;
+    }
+
     const config = await readTextFile("config.json", {
         baseDir: BaseDirectory.AppData
     })
+
     if (config) {
         return JSON.parse(config);
     }

@@ -97,6 +97,7 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
                     }
 
                     setUserConfig(fetchedConfig);
+                    resolve("")
                 } catch (e) {
                     console.error(e)
                     revoke("");
