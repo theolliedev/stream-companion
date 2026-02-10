@@ -48,7 +48,6 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
                 setAiReady(false);
                 ai.restart(client, userConfig.context, async (res) => {
                     if (res) {
-                        resolve("");
                         setAiReady(true);
                         return;
                     }
@@ -56,6 +55,7 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
                 })
             }
 
+            resolve("");
             setLoadingState(false);
         }), {
             loading: "Saving...",
@@ -79,24 +79,34 @@ const ConfigForm = ({backendReady, aiReady, setAiReady}: { backendReady: boolean
 
     useEffect(() => {
         if (backendReady) {
-            toast.promise(new Promise(async (resolve) => {
-                const fetchedConfig = await config.fetch();
-                const apiKey = await ai.fetchAPIKey();
+            toast.promise(new Promise(async (resolve, revoke) => {
+                try {
+                    const fetchedConfig = await config.fetch();
+                    const apiKey = await ai.fetchAPIKey();
 
-                if (apiKey && apiKeyInputRef.current) {
-                    apiKeyInputRef.current.value = apiKey;
-                    ai.init(client, apiKey, fetchedConfig.context, (res) => {
-                        setAiReady(res);
-                    });
+                    if (apiKey && apiKeyInputRef.current) {
+                        apiKeyInputRef.current.value = apiKey;
+                        ai.init(client, apiKey, fetchedConfig.context, (res) => {
+                            if (res) {
+                                setAiReady(true);
+                                resolve("");
+                                return;
+                            }
+                            revoke("");
+                        });
+                    }
+
+                    setUserConfig(fetchedConfig);
+                } catch (e) {
+                    console.error(e)
+                    revoke("");
                 }
 
-                setUserConfig(fetchedConfig);
                 setLoadingState(false);
-                resolve("")
             }), {
                 loading: "Loading configuration...",
                 success: () => `Configuration has been loaded!`,
-                error: "Error",
+                error: "Failed to load configuration",
             })
         }
     }, [apiKeyInputRef, backendReady]);

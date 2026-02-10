@@ -32,7 +32,6 @@ const init = async ()=> {
         } catch {
             client = await stronghold.createClient(CLIENT_NAME);
         }
-        console.log("Stronghold loaded successfully");
 
         const getRecord = async (key: string): Promise<string> => {
             try {

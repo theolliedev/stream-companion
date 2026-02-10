@@ -89,7 +89,6 @@ io.on("connection", (socket) => {
 
         console.log(`Socket.io: ${res.message}`);
         if (res.success && typeof res.message == "string") {
-            console.log(`Socket.io: ${res.message}`);
             console.log("Socket.io: Sending Message");
             sendMessage(res.message);
         }

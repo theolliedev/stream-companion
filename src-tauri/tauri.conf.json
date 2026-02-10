@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "stream-companion",
+  "productName": "Stream Companion",
   "version": "1.0.0",
   "identifier": "com.olliedev.stream-companion",
   "build": {
