@@ -37,4 +37,5 @@ If you want to customize the triggers from the stream, you can add **triggers** 
 
 - [ ] Add AI actions that sends messages to a Websocket Server.
 - [ ] Update the memory management to information in a database and not in memory.
+- [ ] Add an update feature to ease the installation of new versions.
 - [ ] Add support to saving the whole chat conversation to allow a better context for the AI model.
