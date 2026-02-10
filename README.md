@@ -5,16 +5,16 @@ An AI Streamer Companion that allows integration with many streaming platforms a
 ## Features
 
 - Websocket server for real-time communication with streaming platforms and services.
-- **COMING SOON** Custom actions triggered by the AI model sending messages to a websocket server.
-- **COMING SOON** Logging interface to monitor interactions and events.
+- **COMING SOON** - Custom actions triggered by the AI model sending messages to a websocket server.
+- **COMING SOON** - Logging interface to monitor interactions and events.
 
 ## Installation
 
-This tool is developped to work with Streamer.bot and Speaker.bot, but they won't explain how to do the base configuration of them, I suggest reading the documentation of [Streamer.bot](https://docs.streamer.bot/) and [Speaker.bot](https://docs.speaker.bot/) if it's the first time you use them.
+This tool is developped to work with Streamer.bot and Speaker.bot, but they won't explain how to do the base configuration of them, I suggest reading the documentation of [Streamer.bot](https://docs.streamer.bot/get-started/introduction) and [Speaker.bot](https://speaker.bot/get-started/installation) if it's the first time you use them.
 1. Download and install the Stream Companion using the executable from the [releases](https://github.com/ogamacheDev/stream-companion/releases) page.
 2. Open the application and configure the app settings, such as the API Key and the context for the AI model's behavior.
 
-### Streamer.bot Integration
+### Streamer.bot setup
 
 1. Open Streamer.bot and import the following string:
 ```
@@ -22,5 +22,14 @@ U0JBRR+LCAAAAAAABADVWVlz4kgSft+I/Q8OInqfRu7SLfWbkQ3GnsHNYcAs/VCXQE3pGEmA8UT/90kJ
 ```
 2. In `Servers/Clients` > `Custom Websocket Clients` > `Stream Companion` set the correct IP and enable Auto Connect.
 3. In `Actions & Queues` > `Actions` > `Stream Companion` > `Events`, double click on the **trigger** of type `Reward Redemption`, and click `Create Reward`.
-> I suggest putting a higher cost for the reward and a long cooldown to avoid spamming.
 4. If you are using other Custom Websocket Clients, make sure to set the correct connection id in `Actions & Queues` > `Actions` > `Stream Companion` > `Events`.
+
+## Customization
+
+If you want to customize the triggers from the stream, you can add **triggers** that will call the AI and respond back.
+
+1. In `Actions & Queues` > `Actions` > `Stream Companion` > `Events`, add a new trigger of your liking.
+2. In `Sub-Actions` right click on `{} switch ("%triggerName%")` then select `Add Case`.
+3. Enter exactly the type of trigger (ex: Follow, Subscription, Reward Redemption), click `Add` then `Ok`.
+4. Right click on `Set argument %aiPrompt% to ...`, select `Dupplicate Sub-Action`, then drag the duplicated action in the new `case`.
+5. Double click on the dupplicated action and set the prompt to what you want the AI to recieve (ex: %userName& just Followed). I suggest looking at the [Streamer.bot trigger documentation](https://docs.streamer.bot/api/triggers) to see all the arguments given per trigger.
